@@ -1,0 +1,33 @@
+QLineEdit:
+  [
+    # Settings
+    { name: "freqPassband", label: "Passband frequency [Hz]", default: "100" },
+    { name: "freqStopband", label: "Stopband frequency [Hz]", default: "1e3" },
+    { name: "attPassband", label: "Passband attenuation [dB]", default: "-2" },
+    { name: "attStopband", label: "Stopband attenuation [dB]", default: "-15" },
+    { name: "freqSampling", label: "Sampling frequency [Hz]", default: "1e4" },
+    { name: "filterGain", label: "Filter gain", default: "1" },
+    # Filter parameters
+    { name: "freqNyquist", label: "Nyquist frequency [Hz]", default: "0", readOnly: True },
+    { name: "freqCutoff", label: "Cutoff frequency [Hz]", default: "0", readOnly: True },
+    { name: "filterOrder", label: "Filter order", default: "0", readOnly: True }
+  ]
+QPushButton:
+  [
+    { name: "btnCalcAnalog", label: "Calculate analog filter" },
+    { name: "btnCalcDigital", label: "Calculate digital filter" },
+    { name: "btnTestFilter", label: "Test digital filter" }
+  ]
+QTextEdit:
+  [
+    { name: "calcResults", label: "Results", readOnly: True, default: "" }
+  ]
+PlotCanvas:
+  [
+    { name: "canvasTransfer", xlabel: "Frequency [Hz]", ylabel: "Attenuation", toolbar: True, settings: {xLog: 1, Grid: 1} },
+    { name: "canvasPolesZeros", xlabel: "", ylabel: "", toolbar: False }
+  ]
+FilterResponse:
+  [
+    { name: "filterResponseTabs", label: "Filter response" }
+  ]

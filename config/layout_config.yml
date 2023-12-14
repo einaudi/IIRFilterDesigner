@@ -1,0 +1,92 @@
+layouts:
+  [
+    { # Settings Box
+      type: "QGridLayout",
+      name: "settingsBox",
+      label: "Settings",
+      widgets:
+        [
+          # Passband frequency
+          { position: [0,0], type: "QLabel", label: "Passband frequency [Hz]" },
+          { position: [0,1], type: "QLineEdit", name: "freqPassband" },
+          { position: [0,2], type: "QLabel", label: "Passband attenuation [dB]" },
+          { position: [0,3], type: "QLineEdit", name: "attPassband" },
+          # Stopband frequency
+          { position: [1,0], type: "QLabel", label: "Stopband frequency [Hz]" },
+          { position: [1,1], type: "QLineEdit", name: "freqStopband" },
+          { position: [1,2], type: "QLabel", label: "Stopband attenuation [dB]" },
+          { position: [1,3], type: "QLineEdit", name: "attStopband" },
+          # Sampling frequency
+          { position: [2,0], type: "QLabel", label: "Sampling frequency [Hz]" },
+          { position: [2,1], type: "QLineEdit", name: "freqSampling" },
+          { position: [2,2], type: "QLabel", label: "Filter gain" },
+          { position: [2,3], type: "QLineEdit", name: "filterGain" },
+          # Buttons
+          { position: [3,0], type: "QPushButton", name: "btnCalcAnalog", span: [1,2] },
+          { position: [3,2], type: "QPushButton", name: "btnCalcDigital", span: [1,2] }
+        ]
+    },
+    { # Filter parameters box
+      type: "QGridLayout",
+      name: "filterParamsBox",
+      label: "Filter parameters",
+      widgets:
+        [
+          { position: [0,0], type: "QLabel", label: "Nyquist frequency [Hz]" },
+          { position: [0,1], type: "QLineEdit", name: "freqNyquist" },
+          { position: [1,0], type: "QLabel", label: "Cutoff frequency [Hz]" },
+          { position: [1,1], type: "QLineEdit", name: "freqCutoff" },
+          { position: [2,0], type: "QLabel", label: "Filter order" },
+          { position: [2,1], type: "QLineEdit", name: "filterOrder" }
+        ]
+    }
+  ]
+
+mainLayout:
+  { # Main layout
+    name: "mainLayout",
+    type: "QHBoxLayout",
+    contents:
+      [
+        { # Left main box
+          name: "leftBox", type: "QVBoxLayout", stretch: 1, contents:
+          [
+            # Settings
+            { name: "settingsGroup", type: "QGroupBox", label: "Settings", contents: 
+              [
+                { name: "settingsBox", type: "layout", contents: [] }
+              ]
+            },
+            # Filter parameters
+            { name: "filterParamsGroup", type: "QGroupBox", label: "Filter parameters", contents:
+              [
+                { name: "filterParamsHBox", type: "QHBoxLayout", contents: 
+                  [
+                    { name: "filterParamsBox", type: "layout", stretch: 1, contents: [] },
+                    { name: "canvasPolesZeros", type: "widget", stretch: 1, contents: [] }
+                  ]
+                }
+              ]
+            },
+            # Calculation results
+            { name: "resultsGroup", type: "QGroupBox", label: "Calculation results", contents:
+              [
+                { name: "resultsBox", type: "QVBoxLayout", contents:
+                  [
+                    { name: "calcResults", type: "widget", contents: [] },
+                    { name: "btnTestFilter", type: "widget", contents: [] }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        { # Right main box
+          name: "rightBox", type: "QVBoxLayout", stretch: 1, contents: 
+          [
+            { name: "canvasTransfer", type: "widget", stretch: 1, contents: [] },
+            { name: "filterResponseTabs", type: "widget", stretch: 1, contents: [] }
+          ] 
+        }
+      ]
+  }
