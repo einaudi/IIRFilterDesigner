@@ -105,8 +105,17 @@ class PlotCanvas(QWidget):
                 kwargs['y1Lim'],
                 kwargs['y2Lim']
             )
+        if kwargs.get('equal'):
+            self.axes[axis].axis('equal')
 
-    def plot(self, x, y, axis='main', **kwargs):
+    def disable_ticks(self, axis='main'):
+
+        self.axes[axis].set_xticks([])
+        self.axes[axis].set_xticklabels([])
+        self.axes[axis].set_yticks([])
+        self.axes[axis].set_yticklabels([])
+
+    def plot(self, x, y, axis='main', to_legend=True, **kwargs):
         """Plot given data. Use xtickslabels if x is str.
 
         Parameters
@@ -121,7 +130,8 @@ class PlotCanvas(QWidget):
         """
 
         ln = self.axes[axis].plot(x, y, **kwargs)
-        self._lns += ln
+        if to_legend:
+            self._lns += ln
 
         return True
 
@@ -196,3 +206,66 @@ class PlotCanvas(QWidget):
     def set_ylim(self, y1, y2, axis='main'):
 
         self.axes[axis].set_ylim(y1, y2)
+
+class PlotCanvasTwinx(PlotCanvas):
+
+    def __init__(self, xLabel="", y1Label="", y2Label="", parent=None, **kwargs):
+
+        super().__init__(
+            xLabel=xLabel,
+            yLabel=y1Label,
+            parent=parent
+        )
+
+        self.__y2Label = y2Label
+        
+    def init_axes(self):
+
+        self._axes = self._fig.add_subplot(111)
+        self._lns = list()
+        self._axesTwinx = self._axes.twinx()
+        self._lnsTwinx = list()
+
+        self.axes = {
+            'main' : self._axes,
+            'twinx' : self._axesTwinx
+        }
+        self.lns = {
+            'main' : self._lns,
+            'twinx' : self._lnsTwinx
+        }
+
+    def set_style_twinx(self, xLabel=None, y2Label=None):
+
+        if xLabel is not None:
+            self._xLabel = xLabel
+        if y2Label is not None:
+            self.__y2Label = y2Label
+
+        self._axes.set_xlabel(self._xLabel)
+        self._axesTwinx.set_ylabel(self.__y2Label)
+
+    def prepare_axes_twinx(self, **kwargs):
+
+        self._axesTwinx.clear()
+        self._lnsTwinx.clear()
+        self.set_style_twinx()
+        # self._axesTwinx.callbacks.connect('xlim_changed', self.on_xlim_changed)
+
+        if kwargs.get('xLog'):
+            self._axesTwinx.set_xscale('log')
+        if kwargs.get('yLog'):
+            self._axesTwinx.set_yscale('log')
+        if kwargs.get('grid'):
+            self._axesTwinx.grid(True)
+
+    # def add_legend(self, axis='main', loc=0):
+            
+    #     lns = self._lns + self._lnsTwinx
+    #     labs = ['' if l.get_label().startswith('_') else l.get_label()
+    #                     for l in lns]
+
+    #     try:
+    #         self._axes.legend(lns, labs, loc=loc)
+    #     except:
+    #         pass

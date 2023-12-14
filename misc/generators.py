@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
     QVBoxLayout,
     QGroupBox
 )
-from widgets.PlotCanvas import PlotCanvas
+from widgets.PlotCanvas import PlotCanvas, PlotCanvasTwinx
 from widgets.FilterResponse import FilterResponse
 
 
@@ -44,6 +44,24 @@ def generate_widgets(widget_conf):
                     tmp.set_style()
                     try:
                         tmp.prepare_axes(
+                            **widget['settings']
+                        )
+                    except KeyError:
+                        pass
+                elif widget_type == 'PlotCanvasTwinx':
+                    tmp = PlotCanvasTwinx(
+                        widget["xlabel"],
+                        widget["y1label"],
+                        widget["y2label"],
+                        toolbar=widget["toolbar"]
+                    )
+                    tmp.set_style()
+                    tmp.set_style_twinx()
+                    try:
+                        tmp.prepare_axes(
+                            **widget['settings']
+                        )
+                        tmp.prepare_axes_twinx(
                             **widget['settings']
                         )
                     except KeyError:

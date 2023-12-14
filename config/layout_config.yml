@@ -63,13 +63,13 @@ mainLayout:
                 { name: "filterParamsHBox", type: "QHBoxLayout", contents: 
                   [
                     { name: "filterParamsBox", type: "layout", stretch: 1, contents: [] },
-                    { name: "canvasPolesZeros", type: "widget", stretch: 1, contents: [] }
+                    { name: "canvasPolesZeros", type: "widget", contents: [] }
                   ]
                 }
               ]
             },
             # Calculation results
-            { name: "resultsGroup", type: "QGroupBox", label: "Calculation results", contents:
+            { name: "resultsGroup", type: "QGroupBox", label: "Calculation results", stretch: 1, contents:
               [
                 { name: "resultsBox", type: "QVBoxLayout", contents:
                   [

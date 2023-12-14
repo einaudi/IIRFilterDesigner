@@ -14,8 +14,8 @@ QLineEdit:
   ]
 QPushButton:
   [
-    { name: "btnCalcAnalog", label: "Calculate analog filter" },
-    { name: "btnCalcDigital", label: "Calculate digital filter" },
+    { name: "btnCalcAnalog", label: "Calculate continuous filter" },
+    { name: "btnCalcDigital", label: "Calculate discrete filter" },
     { name: "btnTestFilter", label: "Test digital filter" }
   ]
 QTextEdit:
@@ -24,8 +24,11 @@ QTextEdit:
   ]
 PlotCanvas:
   [
-    { name: "canvasTransfer", xlabel: "Frequency [Hz]", ylabel: "Attenuation", toolbar: True, settings: {xLog: 1, Grid: 1} },
-    { name: "canvasPolesZeros", xlabel: "", ylabel: "", toolbar: False }
+    { name: "canvasPolesZeros", xlabel: "", ylabel: "", toolbar: False, settings: {equal: 1, sizePolicy: None }, figSettings: {figsize: [2, 2] } }
+  ]
+PlotCanvasTwinx:
+  [
+    { name: "canvasTransfer", xlabel: "Frequency [Hz]", y1label: "Attenuation [dB]", y2label: "Phase [deg]", toolbar: True, settings: {xLog: 1, Grid: 1} },
   ]
 FilterResponse:
   [
