@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QLabel,
     QCheckBox,
+    QComboBox,
     QProgressBar,
     QTextEdit,
     QGridLayout,
@@ -35,6 +36,11 @@ def generate_widgets(widget_conf):
                     tmp = QCheckBox()
                     if 'default' in widget.keys():
                         tmp.setChecked(widget['default'])
+                elif widget_type == 'QComboBox':
+                    tmp = QComboBox()
+                    if 'contents' in widget.keys():
+                        for item in widget['contents']:
+                            tmp.addItem(item)
                 elif widget_type == 'PlotCanvas':
                     tmp = PlotCanvas(
                         widget["xlabel"],

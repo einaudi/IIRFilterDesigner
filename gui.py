@@ -8,6 +8,7 @@ import threading
 import yaml
 
 import numpy as np
+from scipy.optimize import curve_fit
 
 import src.filter_calc as fc
 from src.IIR import IIRFilter
@@ -26,7 +27,11 @@ from PyQt5.QtCore import pyqtSignal
 
 
 available_files = '(*.csv *.txt)'
-tau_ext_margin = 0.1 # Hz
+
+
+def fit_sin(t, A, f, phi):
+
+    return A*np.sin(2*np.pi*f + phi/np.pi*180)
 
 
 class IIRFilterCalculator(QMainWindow):
@@ -145,6 +150,7 @@ class IIRFilterCalculator(QMainWindow):
             tmp['Stopband frequency [Hz]'] = float(self._widgets['freqStopband'].text())
             tmp['Passband attenuation [dB]'] = float(self._widgets['attPassband'].text())
             tmp['Stopband attenuation [dB]'] = float(self._widgets['attStopband'].text())
+            tmp['Reference'] = self._widgets['comboReference'].currentText()
             tmp['Sampling frequency [Hz]'] = float(self._widgets['freqSampling'].text())
             tmp['Filter gain'] = float(self._widgets['filterGain'].text())
         except ValueError:
@@ -163,6 +169,9 @@ class IIRFilterCalculator(QMainWindow):
             return False
         if tmp['Filter gain'] < 1:
             dialogWarning('Filter gain below unity')
+            return False
+        if tmp['Passband frequency [Hz]'] <= 0 or tmp['Stopband frequency [Hz]'] <= 0 or tmp['Sampling frequency [Hz]'] <= 0:
+            dialogWarning('Frequency must be positive!')
             return False
         
         self._params = tmp
@@ -206,9 +215,15 @@ class IIRFilterCalculator(QMainWindow):
         self._widgets['filterOrder'].setText('{}'.format(self._params['Filter order']))
 
         # Calculate cutoff frequency
+        if self._params['Reference'] == 'Passband':
+            o = self._params['Passband Omega']
+            a = self._params['Passband attenuation']
+        elif self._params['Reference'] == 'Stopband':
+            o = self._params['Stopband Omega']
+            a = self._params['Stopband attenuation']
         self._params['Cutoff Omega'] = fc.calc_cutoff_freq(
-            self._params['Stopband Omega'],
-            self._params['Stopband attenuation'],
+            o,
+            a,
             self._params['Filter order']
         )
         self._params['Cutoff frequency [Hz]'] = self._params['Cutoff Omega']/2/np.pi
@@ -264,6 +279,11 @@ class IIRFilterCalculator(QMainWindow):
         self._plot_poles_zeros()
 
         self._showResults()
+        self._widgets['filterResponseTabs'].getCoefs(
+            self._fb_coefs,
+            self._ff_coefs,
+            self._params['Sampling frequency [Hz]']
+        )
 
         self._flag_digital_calculated = True
         return True
@@ -276,12 +296,12 @@ class IIRFilterCalculator(QMainWindow):
         for item in self._fb_coefs:
             msg += '{:.4e}, '.format(item)
         msg = msg[:-2]
-        msg += ']\n'
+        msg += ']\n\n'
         msg += 'Feedforward coefs: ['
         for item in self._ff_coefs:
             msg += '{:.4e}, '.format(item)
         msg = msg[:-2]
-        msg += ']\n'
+        msg += ']\n\n'
         # Zeros and poles
         msg += 'Zeros: ['
         for item in self._digitalZeros:
@@ -317,12 +337,15 @@ class IIRFilterCalculator(QMainWindow):
 
         self._widgets['progressBar'].setMaximum(self._fs_transfer.size)
         ys_amp = []
+        ys_phase = []
         filt = IIRFilter(
             self._ff_coefs,
             self._fb_coefs,
         )
+        A_in = 0.5
         start = time.time()
         for i, f in enumerate(self._fs_transfer):
+            # ETA and progress bar updates
             self.updateProgress.emit(i)
             stop = time.time()
             speed = 1/(stop-start)
@@ -333,17 +356,32 @@ class IIRFilterCalculator(QMainWindow):
                 time_left = -1
             self.updateETA.emit(time_left, speed)
 
+            # Calculations
             T = 50/f # check filter on 200 periods
             N = int(T*self._params['Sampling frequency [Hz]']) # set time step according to sampling frequency
             ts = np.linspace(0, T, N)
-            signal = 0.5*np.sin(2*np.pi*f*ts)
+            signal = A_in*np.sin(2*np.pi*f*ts)
             tmp = []
             filt.reset()
-            for i in range(N):
-                tmp.append(filt.update(signal[i]))
+            for j in range(N):
+                tmp.append(filt.update(signal[j]))
             
             n = 5*int(self._params['Sampling frequency [Hz]']/f) # number of points for 5 periods
+            # Direct amplitude calculation
             ys_amp.append(np.amax(tmp[-n:]) - np.amin(tmp[-n:]))
+            # Amplitude and phase by fitting
+            # p0 = [
+            #     A_in*fc.dB_to_att(self._ys_digital[i]),
+            #     self._ys_digital_phase[i]
+            # ]
+            # fit_func = lambda t, A, phi: fit_sin(t, A, f, phi)
+            # popt, _ = curve_fit(
+            #     fit_func,
+            #     ts[-n:],
+            #     tmp[-n:]
+            # )
+            # ys_amp.append(popt[0]/A_in)
+            # ys_phase.append(popt[1])
 
             if eventStop.is_set():
                 return False

@@ -19,6 +19,10 @@ QPushButton:
     { name: "btnTestFilter", label: "Test digital filter" },
     { name: "btnTestCancel", label: "Cancel" }
   ]
+QComboBox:
+  [
+    { name: "comboReference", label: "Cutoff reference", contents: ['Passband', 'Stopband'] }
+  ]  
 QTextEdit:
   [
     { name: "calcResults", label: "Results", readOnly: True, default: "" }
