@@ -16,11 +16,20 @@ QPushButton:
   [
     { name: "btnCalcAnalog", label: "Calculate continuous filter" },
     { name: "btnCalcDigital", label: "Calculate discrete filter" },
-    { name: "btnTestFilter", label: "Test digital filter" }
+    { name: "btnTestFilter", label: "Test digital filter" },
+    { name: "btnTestCancel", label: "Cancel" }
   ]
 QTextEdit:
   [
     { name: "calcResults", label: "Results", readOnly: True, default: "" }
+  ]
+QProgressBar:
+  [
+    { name: "progressBar", label: "Progress bar" }
+  ]
+QLabel:
+  [
+    { name: "labelProgress", label: "eta: 0.00 s, (0.00/s)"}
   ]
 PlotCanvas:
   [

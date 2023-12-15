@@ -39,6 +39,18 @@ layouts:
           { position: [2,0], type: "QLabel", label: "Filter order" },
           { position: [2,1], type: "QLineEdit", name: "filterOrder" }
         ]
+    },
+    { # Filter test
+      type: "QGridLayout",
+      name: "filterTestBox",
+      label: "Filter test",
+      widgets:
+        [
+          { position: [0,0], type: "QProgressBar", name: "progressBar", span: [1,2] },
+          { position: [0,2], type: "QLabelWidget", name: "labelProgress" },
+          { position: [1,0], type: "QPushButton", name: "btnTestFilter", span: [1,2] },
+          { position: [1,2], type: "QPushButton", name: "btnTestCancel" }
+        ]
     }
   ]
 
@@ -49,7 +61,7 @@ mainLayout:
     contents:
       [
         { # Left main box
-          name: "leftBox", type: "QVBoxLayout", stretch: 1, contents:
+          name: "leftBox", type: "QVBoxLayout", stretch: 4, contents:
           [
             # Settings
             { name: "settingsGroup", type: "QGroupBox", label: "Settings", contents: 
@@ -57,15 +69,24 @@ mainLayout:
                 { name: "settingsBox", type: "layout", contents: [] }
               ]
             },
-            # Filter parameters
-            { name: "filterParamsGroup", type: "QGroupBox", label: "Filter parameters", contents:
+            { name: "paramsMain", type: "QHBoxLayout", contents: 
               [
-                { name: "filterParamsHBox", type: "QHBoxLayout", contents: 
+                { name: "paramsLeft", type: "QVBoxLayout", stretch: 1, contents:
                   [
-                    { name: "filterParamsBox", type: "layout", stretch: 1, contents: [] },
-                    { name: "canvasPolesZeros", type: "widget", contents: [] }
+                    # Filter parameters
+                    { name: "filterParamsGroup", type: "QGroupBox", label: "Filter parameters", contents:
+                      [
+                        { name: "filterParamsBox", type: "layout", stretch: 1, contents: [] }
+                      ]
+                    },
+                    { name: "filterTestGroup", type: "QGroupBox", label: "Test filter", contents: 
+                      [
+                        { name: "filterTestBox", type: "layout", stretch: 1, contents: [] }
+                      ]
+                    }
                   ]
-                }
+                },
+                { name: "canvasPolesZeros", type: "widget"}
               ]
             },
             # Calculation results
@@ -73,8 +94,7 @@ mainLayout:
               [
                 { name: "resultsBox", type: "QVBoxLayout", contents:
                   [
-                    { name: "calcResults", type: "widget", contents: [] },
-                    { name: "btnTestFilter", type: "widget", contents: [] }
+                    { name: "calcResults", type: "widget", contents: [] }
                   ]
                 }
               ]
@@ -82,7 +102,7 @@ mainLayout:
           ]
         },
         { # Right main box
-          name: "rightBox", type: "QVBoxLayout", stretch: 1, contents: 
+          name: "rightBox", type: "QVBoxLayout", stretch: 6, contents: 
           [
             { name: "canvasTransfer", type: "widget", stretch: 1, contents: [] },
             { name: "filterResponseTabs", type: "widget", stretch: 1, contents: [] }

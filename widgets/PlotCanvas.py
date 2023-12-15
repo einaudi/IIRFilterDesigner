@@ -214,7 +214,8 @@ class PlotCanvasTwinx(PlotCanvas):
         super().__init__(
             xLabel=xLabel,
             yLabel=y1Label,
-            parent=parent
+            parent=parent,
+            **kwargs
         )
 
         self.__y2Label = y2Label
