@@ -8,7 +8,6 @@ import threading
 import yaml
 
 import numpy as np
-from scipy.optimize import curve_fit
 
 import src.filter_calc as fc
 from src.IIR import IIRFilter
@@ -27,11 +26,6 @@ from PyQt5.QtCore import pyqtSignal
 
 
 available_files = '(*.csv *.txt)'
-
-
-def fit_sin(t, A, f, phi):
-
-    return A*np.sin(2*np.pi*f + phi/np.pi*180)
 
 
 class IIRFilterCalculator(QMainWindow):
@@ -69,6 +63,7 @@ class IIRFilterCalculator(QMainWindow):
         self._ys_digital = np.zeros(1)
         self._ys_digital_phase = np.zeros(1)
         self._ys_implemented = np.zeros(1)
+        self._ys_implemented_phase = np.zeros(1)
 
         self.initWidgets(widgets_conf)
         self.initLayout(layout_conf)
@@ -146,6 +141,7 @@ class IIRFilterCalculator(QMainWindow):
         
         # Parameters from settings section
         try:
+            tmp['Band type'] = self._widgets['comboBandType'].currentText()
             tmp['Passband frequency [Hz]'] = float(self._widgets['freqPassband'].text())
             tmp['Stopband frequency [Hz]'] = float(self._widgets['freqStopband'].text())
             tmp['Passband attenuation [dB]'] = float(self._widgets['attPassband'].text())
@@ -158,26 +154,53 @@ class IIRFilterCalculator(QMainWindow):
             return False
 
         # Ranges
+        # nyquist
         if tmp['Passband frequency [Hz]'] > tmp['Sampling frequency [Hz]']/2:
             dialogWarning('Passband frequency above Nyquist frequency!')
             return False
         if tmp['Stopband frequency [Hz]'] > tmp['Sampling frequency [Hz]']/2:
             dialogWarning('Stopband frequency above Nyquist frequency!')
             return False
-        if tmp['Passband frequency [Hz]'] > tmp['Stopband frequency [Hz]']:
-            dialogWarning('Passband frequency above stopband frequency!')
-            return False
-        if tmp['Filter gain'] < 1:
-            dialogWarning('Filter gain below unity')
-            return False
         if tmp['Passband frequency [Hz]'] <= 0 or tmp['Stopband frequency [Hz]'] <= 0 or tmp['Sampling frequency [Hz]'] <= 0:
             dialogWarning('Frequency must be positive!')
             return False
         
+        # gain
+        if tmp['Filter gain'] < 1:
+            dialogWarning('Filter gain below unity')
+            return False
+        # lowpass
+        if tmp['Band type'] == 'lowpass':
+            if tmp['Passband frequency [Hz]'] > tmp['Stopband frequency [Hz]']:
+                dialogWarning('Passband frequency above stopband frequency!')
+                return False
+            if tmp['Passband attenuation [dB]'] < tmp['Stopband attenuation [dB]']:
+                dialogWarning('Passband attenuation below stopband attenuation!')
+                return False
+        # highpass
+        if tmp['Band type'] == 'highpass':
+            if tmp['Passband frequency [Hz]'] < tmp['Stopband frequency [Hz]']:
+                dialogWarning('Passband frequency below stopband frequency!')
+                return False
+            if tmp['Passband attenuation [dB]'] < tmp['Stopband attenuation [dB]']:
+                dialogWarning('Passband attenuation below stopband attenuation!')
+                return False
+        # bandpass
+        if tmp['Band type'] == 'bandpass':
+            dialogWarning('Currently not available!')
+            return False
+        if tmp['Band type'] == 'bandstop':
+            dialogWarning('Currently not available!')
+            return False
+        
+
         self._params = tmp
 
+        lowest_critical_freq = []
+        if self._params['Band type'] in ['lowpass', 'highpass']:
+            lowest_critical_freq = np.min([self._params['Passband frequency [Hz]'], self._params['Stopband frequency [Hz]']])
         self._fs_transfer = np.logspace(
-            np.log10(self._params['Passband frequency [Hz]']/100),
+            np.log10(lowest_critical_freq/100),
             np.log10(self._params['Sampling frequency [Hz]']/2),
             100
         )
@@ -210,7 +233,8 @@ class IIRFilterCalculator(QMainWindow):
             self._params['Passband Omega'],
             self._params['Stopband Omega'],
             self._params['Passband attenuation'],
-            self._params['Stopband attenuation']
+            self._params['Stopband attenuation'],
+            self._params['Band type']
         )
         self._widgets['filterOrder'].setText('{}'.format(self._params['Filter order']))
 
@@ -224,7 +248,8 @@ class IIRFilterCalculator(QMainWindow):
         self._params['Cutoff Omega'] = fc.calc_cutoff_freq(
             o,
             a,
-            self._params['Filter order']
+            self._params['Filter order'],
+            self._params['Band type']
         )
         self._params['Cutoff frequency [Hz]'] = self._params['Cutoff Omega']/2/np.pi
         self._widgets['freqCutoff'].setText('{:.4e}'.format(self._params['Cutoff frequency [Hz]']))
@@ -236,7 +261,8 @@ class IIRFilterCalculator(QMainWindow):
         H = fc.get_continuous_transfer_function(
             self._params['Cutoff Omega'],
             self._params['Filter order'],
-            self._params['Filter roots']
+            self._params['Filter roots'],
+            self._params['Band type']
         )
         self._H = lambda s: self._params['Filter gain'] * H(s)
 
@@ -254,14 +280,16 @@ class IIRFilterCalculator(QMainWindow):
             self._params['Cutoff Omega'],
             self._params['Filter order'],
             self._params['Filter roots'],
-            self._params['Sampling frequency [Hz]']
+            self._params['Sampling frequency [Hz]'],
+            self._params['Band type']
         )
         self._H_z = lambda z: self._params['Filter gain'] * H_z(z)
 
         z, p, k = fc.get_digital_filter_zpk(
             self._params['Filter order'],
             self._params['Cutoff Omega'],
-            self._params['Sampling Omega']
+            self._params['Sampling Omega'],
+            self._params['Band type']
         )
         self._digitalZeros = z
         self._digitalPoles = p
@@ -269,7 +297,8 @@ class IIRFilterCalculator(QMainWindow):
         fb_coefs, ff_coefs, _ = fc.get_digital_filter_coefs(
             self._params['Filter order'],
             self._params['Cutoff Omega'],
-            self._params['Sampling Omega']
+            self._params['Sampling Omega'],
+            self._params['Band type']
         )
         self._fb_coefs = fb_coefs
         self._ff_coefs = self._params['Filter gain'] * ff_coefs
@@ -290,7 +319,7 @@ class IIRFilterCalculator(QMainWindow):
 
     def _showResults(self):
 
-        msg = 'Calculated filter parameters:\n'
+        msg = 'Calculated filter parameters:\n\n'
         # filter coefs
         msg += 'Feedback coefs: ['
         for item in self._fb_coefs:
@@ -357,36 +386,31 @@ class IIRFilterCalculator(QMainWindow):
             self.updateETA.emit(time_left, speed)
 
             # Calculations
-            T = 50/f # check filter on 200 periods
+            T = 50/f # check filter on 50 periods
             N = int(T*self._params['Sampling frequency [Hz]']) # set time step according to sampling frequency
             ts = np.linspace(0, T, N)
-            signal = A_in*np.sin(2*np.pi*f*ts)
-            tmp = []
+            # sine signal
+            signal_sin = A_in*np.sin(2*np.pi*f*ts)
+            tmp_sin = []
             filt.reset()
             for j in range(N):
-                tmp.append(filt.update(signal[j]))
+                tmp_sin.append(filt.update(signal_sin[j]))
             
             n = 5*int(self._params['Sampling frequency [Hz]']/f) # number of points for 5 periods
             # Direct amplitude calculation
-            ys_amp.append(np.amax(tmp[-n:]) - np.amin(tmp[-n:]))
-            # Amplitude and phase by fitting
-            # p0 = [
-            #     A_in*fc.dB_to_att(self._ys_digital[i]),
-            #     self._ys_digital_phase[i]
-            # ]
-            # fit_func = lambda t, A, phi: fit_sin(t, A, f, phi)
-            # popt, _ = curve_fit(
-            #     fit_func,
-            #     ts[-n:],
-            #     tmp[-n:]
-            # )
-            # ys_amp.append(popt[0]/A_in)
-            # ys_phase.append(popt[1])
+            ys_amp.append((np.amax(tmp_sin[-n:]) - np.amin(tmp_sin[-n:]))/A_in/2)
+            # crosscorrelation for phase shift retrieval
+            corr = np.correlate(signal_sin[-n:], tmp_sin[-n:], "full")
+            dt = np.linspace(-ts[n], ts[n], (2*n) - 1)
+            t_shift = dt[corr.argmax()]
+            phi = ((2.0 * np.pi) * ((t_shift / (1.0 / f)) % 1.0)) - 2*np.pi
+            ys_phase.append(phi)
 
             if eventStop.is_set():
                 return False
 
         self._ys_implemented = fc.att_to_dB(ys_amp)
+        self._ys_implemented_phase = np.mod(np.array(ys_phase)/np.pi*180, 360)
 
         self.plotTransfer.emit()
 
@@ -409,7 +433,7 @@ class IIRFilterCalculator(QMainWindow):
         # Calculate filter transfer
         tmp = self._H(1j*2*np.pi*self._fs_transfer)
         self._ys_analog = fc.att_to_dB(np.absolute(tmp))
-        self._ys_analog_phase = np.angle(tmp) / np.pi * 180
+        self._ys_analog_phase = np.mod(np.angle(tmp) / np.pi * 180, 360)
 
         # Plot analog transfer function
         self._widgets['canvasTransfer'].prepare_axes(xLog=True, Grid=True)
@@ -456,7 +480,7 @@ class IIRFilterCalculator(QMainWindow):
         # Calculate transfer
         tmp = self._H_z(np.exp(1j*omegas))
         self._ys_digital = fc.att_to_dB(np.absolute(tmp))
-        self._ys_digital_phase = np.angle(tmp) / np.pi*180
+        self._ys_digital_phase = np.mod(np.angle(tmp) / np.pi*180, 360)
 
         # Plot transfer
         self._widgets['canvasTransfer'].plot(
@@ -487,6 +511,14 @@ class IIRFilterCalculator(QMainWindow):
             self._ys_implemented,
             color='C2',
             label='implemented'
+        )
+        self._widgets['canvasTransfer'].plot(
+            self._fs_transfer,
+            self._ys_implemented_phase,
+            axis='twinx',
+            color='C2',
+            linestyle='dashed',
+            to_legend=False
         )
         self._widgets['canvasTransfer'].add_legend()
         self._widgets['canvasTransfer'].refresh()

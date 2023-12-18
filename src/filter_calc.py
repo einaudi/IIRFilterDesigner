@@ -29,14 +29,18 @@ def prewarp_frequency(omega, f_samp):
 
 
 # Initial calculations
-def calc_order(Omega_p, Omega_s, att_p, att_s, mode='Butterworth'):
+def calc_order(Omega_p, Omega_s, att_p, att_s, btype='lowpass', mode='Butterworth'):
+
+    # frequency mapping
+    Omega_p_map = map_frequency(Omega_p, 1, btype)
+    Omega_s_map = map_frequency(Omega_s, 1, btype)
 
     if mode == 'Butterworth':
         nom = np.power(att_s, -2) - 1
         nom /= np.power(att_p, -2) - 1
         nom = np.log10(nom)
 
-        denom = Omega_s/Omega_p
+        denom = Omega_s_map/Omega_p_map
         denom = 2*np.log10(denom)
 
         ret = nom/denom
@@ -47,17 +51,33 @@ def calc_order(Omega_p, Omega_s, att_p, att_s, mode='Butterworth'):
         print('Order calculation. Unknown filter type.')
         return None
     
-def calc_cutoff_freq(Omega_p, att_p, order, mode='Butterworth'):
+def calc_cutoff_freq(Omega, att, order, btype='lowpass', mode='Butterworth'):
 
     if mode == 'Butterworth':
-        ret = np.power(att_p, -2) - 1
-        ret = np.power(ret, 1/2/order)
-        ret = Omega_p/ret
+        if btype == 'lowpass':
+            ret = np.power(att, -2) - 1
+            ret = np.power(ret, 1/2/order)
+            ret = Omega/ret
+        elif btype == 'highpass':
+            ret = np.power(att, -2) - 1
+            ret = np.power(ret, 1/2/order)
+            ret = Omega*ret
 
         return ret
     else:
         print('Cutoff frequency calculation. Unknown filter type.')
         return None
+
+
+# Frequency mapping to different band types
+def map_frequency(Omega, Omega_c, btype='lowpass'):
+
+    if btype == 'lowpass':
+        return Omega
+    elif btype == 'highpass':
+        return Omega_c/Omega
+    else:
+        return 0
 
 
 # Normalised filter calculations
@@ -71,11 +91,14 @@ def calc_normalised_lowpass_roots(order):
 
     return ret
 
-def get_continuous_transfer_function(Omega_c, order, sk):
+def get_continuous_transfer_function(Omega_c, order, sk, btype='lowpass'):
 
     N = int(order)
     def H(s):
-        s_coef = s/Omega_c
+        if btype == 'lowpass':
+            s_coef = s/Omega_c
+        elif btype == 'highpass':
+            s_coef = Omega_c/s
         ret = 1
         for k in range(N):
             ret /= (s_coef - sk[k])
@@ -84,7 +107,7 @@ def get_continuous_transfer_function(Omega_c, order, sk):
     
     return H
 
-def get_digital_transfer_function(Omega_c, order, sk, f_samp):
+def get_digital_transfer_function(Omega_c, order, sk, f_samp, btype='lowpass'):
 
     N = int(order)
     # def H(z):
@@ -95,7 +118,7 @@ def get_digital_transfer_function(Omega_c, order, sk, f_samp):
 
     #     return ret
 
-    continuous_filter = get_continuous_transfer_function(Omega_c, N, sk)
+    continuous_filter = get_continuous_transfer_function(Omega_c, N, sk, btype)
 
     def H(z):
         z_coef = (1-1/z)/(1+1/z) * 2*f_samp
@@ -104,7 +127,7 @@ def get_digital_transfer_function(Omega_c, order, sk, f_samp):
     return H
 
 
-# Fitting digital filter parameter
+# Digital filter parameters
 def fit_digital_filter(filter_func, omegas, order, bounds=(-2, 2)):
 
     # Direct fitting

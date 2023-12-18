@@ -21,7 +21,8 @@ QPushButton:
   ]
 QComboBox:
   [
-    { name: "comboReference", label: "Cutoff reference", contents: ['Passband', 'Stopband'] }
+    { name: "comboReference", label: "Cutoff reference", contents: ['Passband', 'Stopband'] },
+    { name: "comboBandType", label: "Filter type", contents: ['lowpass', 'highpass', 'bandpass', 'bandstop'] }
   ]  
 QTextEdit:
   [

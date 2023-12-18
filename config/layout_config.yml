@@ -6,26 +6,29 @@ layouts:
       label: "Settings",
       widgets:
         [
-          # Passband frequency
-          { position: [0,0], type: "QLabel", label: "Passband frequency [Hz]" },
-          { position: [0,1], type: "QLineEdit", name: "freqPassband" },
-          { position: [0,2], type: "QLabel", label: "Passband attenuation [dB]" },
-          { position: [0,3], type: "QLineEdit", name: "attPassband" },
-          # Stopband frequency
-          { position: [1,0], type: "QLabel", label: "Stopband frequency [Hz]" },
-          { position: [1,1], type: "QLineEdit", name: "freqStopband" },
-          { position: [1,2], type: "QLabel", label: "Stopband attenuation [dB]" },
-          { position: [1,3], type: "QLineEdit", name: "attStopband" },
-          { position: [2,0], type: "QLabel", label: "Reference point" },
-          { position: [2,1], type: "QComboBox", name: "comboReference" },
+          # Filter type
+          { position: [0,0], type: "QLabel", label: "Band type" },
+          { position: [0,1], type: "QComboBox", name: "comboBandType" },
           # Sampling frequency
-          { position: [3,0], type: "QLabel", label: "Sampling frequency [Hz]" },
-          { position: [3,1], type: "QLineEdit", name: "freqSampling" },
-          { position: [3,2], type: "QLabel", label: "Filter gain" },
-          { position: [3,3], type: "QLineEdit", name: "filterGain" },
+          { position: [1,0], type: "QLabel", label: "Sampling frequency [Hz]" },
+          { position: [1,1], type: "QLineEdit", name: "freqSampling" },
+          { position: [1,2], type: "QLabel", label: "Filter gain" },
+          { position: [1,3], type: "QLineEdit", name: "filterGain" },
+          # Passband frequency
+          { position: [2,0], type: "QLabel", label: "Passband frequency [Hz]" },
+          { position: [2,1], type: "QLineEdit", name: "freqPassband" },
+          { position: [2,2], type: "QLabel", label: "Passband attenuation [dB]" },
+          { position: [2,3], type: "QLineEdit", name: "attPassband" },
+          # Stopband frequency
+          { position: [3,0], type: "QLabel", label: "Stopband frequency [Hz]" },
+          { position: [3,1], type: "QLineEdit", name: "freqStopband" },
+          { position: [3,2], type: "QLabel", label: "Stopband attenuation [dB]" },
+          { position: [3,3], type: "QLineEdit", name: "attStopband" },
+          { position: [4,0], type: "QLabel", label: "Reference point" },
+          { position: [4,1], type: "QComboBox", name: "comboReference" },
           # Buttons
-          { position: [4,0], type: "QPushButton", name: "btnCalcAnalog", span: [1,2] },
-          { position: [4,2], type: "QPushButton", name: "btnCalcDigital", span: [1,2] }
+          { position: [5,0], type: "QPushButton", name: "btnCalcAnalog", span: [1,2] },
+          { position: [5,2], type: "QPushButton", name: "btnCalcDigital", span: [1,2] }
         ]
     },
     { # Filter parameters box
