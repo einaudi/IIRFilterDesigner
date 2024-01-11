@@ -17,7 +17,9 @@ QPushButton:
     { name: "btnCalcAnalog", label: "Calculate continuous filter" },
     { name: "btnCalcDigital", label: "Calculate discrete filter" },
     { name: "btnTestFilter", label: "Test digital filter" },
-    { name: "btnTestCancel", label: "Cancel" }
+    { name: "btnTestCancel", label: "Cancel" },
+    { name: "btnFileRead", label: "Read file" },
+    { name: "btnFileSave", label: "Save file" }
   ]
 QComboBox:
   [

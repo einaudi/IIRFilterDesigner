@@ -25,7 +25,17 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import pyqtSignal
 
 
-available_files = '(*.csv *.txt)'
+available_files = '(*.yml *.yaml)'
+idx_band = {
+    'lowpass': 0,
+    'highpass': 1,
+    'bandpass': 2,
+    'bandstop': 3
+}
+idx_reference = {
+    'Passband': 0,
+    'Stopband': 1
+}
 
 
 class IIRFilterCalculator(QMainWindow):
@@ -127,6 +137,8 @@ class IIRFilterCalculator(QMainWindow):
         self._widgets['btnCalcDigital'].clicked.connect(self._calcDigitalFilter)
         self._widgets['btnTestFilter'].clicked.connect(self._testFilter)
         self._widgets['btnTestCancel'].clicked.connect(self._testFilterCancel)
+        self._widgets['btnFileRead'].clicked.connect(self._readFile)
+        self._widgets['btnFileSave'].clicked.connect(self._saveFile)
 
         self.updateProgress.connect(lambda cts: self._widgets['progressBar'].setValue(cts))
         self.updateETA.connect(lambda time_left, speed: self._widgets['labelProgress'].setText('eta: {0:6.2f} s ({1:6.2f}/s)'.format(
@@ -411,6 +423,11 @@ class IIRFilterCalculator(QMainWindow):
 
         self._ys_implemented = fc.att_to_dB(ys_amp)
         self._ys_implemented_phase = np.mod(np.array(ys_phase)/np.pi*180, 360)
+        self._ys_implemented_phase = np.where(
+            self._ys_implemented_phase > 180,
+            self._ys_implemented_phase - 360,
+            self._ys_implemented_phase
+        )
 
         self.plotTransfer.emit()
 
@@ -434,6 +451,11 @@ class IIRFilterCalculator(QMainWindow):
         tmp = self._H(1j*2*np.pi*self._fs_transfer)
         self._ys_analog = fc.att_to_dB(np.absolute(tmp))
         self._ys_analog_phase = np.mod(np.angle(tmp) / np.pi * 180, 360)
+        self._ys_analog_phase = np.where(
+            self._ys_analog_phase > 180,
+            self._ys_analog_phase - 360,
+            self._ys_analog_phase
+        )
 
         # Plot analog transfer function
         self._widgets['canvasTransfer'].prepare_axes(xLog=True, Grid=True)
@@ -481,6 +503,11 @@ class IIRFilterCalculator(QMainWindow):
         tmp = self._H_z(np.exp(1j*omegas))
         self._ys_digital = fc.att_to_dB(np.absolute(tmp))
         self._ys_digital_phase = np.mod(np.angle(tmp) / np.pi*180, 360)
+        self._ys_digital_phase = np.where(
+            self._ys_digital_phase > 180,
+            self._ys_digital_phase - 360,
+            self._ys_digital_phase
+        )
 
         # Plot transfer
         self._widgets['canvasTransfer'].plot(
@@ -564,6 +591,67 @@ class IIRFilterCalculator(QMainWindow):
 
         self._widgets['canvasPolesZeros'].refresh()
         
+    # Files
+    def _readFile(self):
+
+        path = QFileDialog.getOpenFileNames(
+            self,
+            'Open file',
+            '~/',
+            available_files
+        )
+
+        if len(path[0]) > 1:
+            dialogWarning('Choose only one file!')
+            return False
+        elif len(path[0]) == 0:
+            return False
+        else:
+            with open(path[0][0]) as f:
+                self._params = yaml.safe_load(f)
+            self._widgets['comboBandType'].setCurrentIndex(idx_band[self._params['Band type']])
+            self._widgets['comboReference'].setCurrentIndex(idx_reference[self._params['Reference']])
+            self._widgets['freqSampling'].setText('{:.4e}'.format(self._params['Sampling frequency [Hz]']))
+            self._widgets['filterGain'].setText('{:.4e}'.format(self._params['Filter gain']))
+            self._widgets['freqPassband'].setText('{:.4e}'.format(self._params['Passband frequency [Hz]']))
+            self._widgets['attPassband'].setText('{:.4e}'.format(self._params['Passband attenuation [dB]']))
+            self._widgets['freqStopband'].setText('{:.4e}'.format(self._params['Stopband frequency [Hz]']))
+            self._widgets['attStopband'].setText('{:.4e}'.format(self._params['Stopband attenuation [dB]']))
+            return True
+
+    def _saveFile(self):
+
+        if not self._flag_digital_calculated:
+            dialogWarning('Calculate digital filter first!')
+            return False
+
+        path = QFileDialog.getSaveFileName(
+            self,
+            'Open file',
+            '~/',
+            available_files
+        )[0]
+
+        if path == '':
+            return False
+
+        to_save = {
+            'Band type': self._params['Band type'],
+            'Sampling frequency [Hz]': self._params['Sampling frequency [Hz]'],
+            'Filter gain': self._params['Filter gain'],
+            'Passband frequency [Hz]': self._params['Passband frequency [Hz]'],
+            'Stopband frequency [Hz]': self._params['Stopband frequency [Hz]'],
+            'Passband attenuation [dB]': self._params['Passband attenuation [dB]'],
+            'Stopband attenuation [dB]': self._params['Stopband attenuation [dB]'],
+            'Reference': self._params['Reference'],
+            'ff_coefs': self._ff_coefs.tolist(),
+            'fb_coefs': self._fb_coefs.tolist()
+        }
+
+        with open('{}'.format(path), 'w') as f:
+            yaml.dump(to_save, f)
+        return True
+
 
 
 if __name__ == '__main__':

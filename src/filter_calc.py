@@ -2,8 +2,6 @@
 
 import numpy as np
 
-from scipy.optimize import curve_fit
-from scipy.special import binom
 from scipy.signal import iirfilter, freqz
 
 
@@ -128,87 +126,6 @@ def get_digital_transfer_function(Omega_c, order, sk, f_samp, btype='lowpass'):
 
 
 # Digital filter parameters
-def fit_digital_filter(filter_func, omegas, order, bounds=(-2, 2)):
-
-    # Direct fitting
-    N = int(order)
-
-    def fit_func(omega, *args):
-
-        z = np.exp(1j*omega)
-        nom = 0
-        for k in range(N+1):
-            nom += args[k]*np.power(z, -k)
-        denom = 1
-        for k in range(N):
-            denom += args[N+1+k]*np.power(z, -k-1)
-
-        ret = np.absolute(nom/denom)
-
-        return ret
-    
-    zs = np.exp(1j*omegas)
-    ys = np.absolute(filter_func(zs))
-    p0 = np.ones(2*N+1)*0.5
-    # p0[N] = 1
-    popt, _ = curve_fit(
-        fit_func,
-        omegas,
-        ys,
-        p0=p0,
-        bounds=bounds
-    )
-    filter_fitted = fit_func(omegas, *popt)
-
-    ff_coefs = np.array(popt[:N+1])
-    fb_coefs = -np.array(popt[N+1:])
-
-    return fb_coefs, ff_coefs, filter_fitted
-
-    # Denominator fitting, numerator from Newton's binomial
-    # N = int(order)
-
-    # # numerator - binomial expansion of (1 - z^-1)^N
-    # ff_coefs = np.zeros(N+1)
-    # for k in range(N+1):
-    #     ff_coefs[k] = binom(N, k) * np.power(-1, k)
-
-    # # denominator - fitting
-    # def fit_func(omega, *args):
-    #     ret = 0
-    #     zs = np.exp(1j*omega)
-    #     for k in range(N+1):
-    #         ret += args[k] * np.power(zs, -k)
-
-    #     return np.absolute(ret)
-    
-    # zs = np.exp(1j*omegas)
-    # ys = np.absolute(1 - np.power(zs, -1))
-    # ys = np.power(ys, N) / np.absolute(filter_func(zs))
-    # p0 = np.ones(N+1) * 0.5
-
-    # fb_coefs, _ = curve_fit(
-    #     fit_func,
-    #     omegas,
-    #     ys,
-    #     p0=p0,
-    #     bounds=bounds
-    # )
-
-    # # gain normalisation
-    # ff_coefs /= fb_coefs[0]
-    # fb_coefs /= fb_coefs[0]
-
-    # # fitted filter
-    # nom = 0
-    # for k in range(N+1):
-    #     nom += ff_coefs[k] * np.power(zs, -k)
-    # denom = fit_func(omegas, *fb_coefs)
-
-    # filter_fitted = np.absolute(nom/denom)
-
-    # return fb_coefs, ff_coefs, filter_fitted
-
 def get_digital_filter_coefs(order, omega_c, omega_samp, btype='lowpass'):
 
     N = int(order)

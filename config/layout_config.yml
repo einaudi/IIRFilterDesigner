@@ -56,6 +56,16 @@ layouts:
           { position: [1,0], type: "QPushButton", name: "btnTestFilter", span: [1,2] },
           { position: [1,2], type: "QPushButton", name: "btnTestCancel" }
         ]
+    },
+    { # Files
+      type: "QGridLayout",
+      name: "filesBox",
+      label: "Files",
+      widgets:
+      [
+        { position: [0,0], type: "QPushButton", name: "btnFileRead" },
+        { position: [0,1], type: "QPushButton", name: "btnFileSave" }
+      ]
     }
   ]
 
@@ -102,6 +112,12 @@ mainLayout:
                     { name: "calcResults", type: "widget", contents: [] }
                   ]
                 }
+              ]
+            },
+            # Files
+            { name: "filesGroup", type: "QGroupBox", label: "Files", contents:
+              [
+                { name: "filesBox", type: "layout", contents: [] }
               ]
             }
           ]

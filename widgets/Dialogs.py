@@ -9,13 +9,6 @@ from PyQt5.QtWidgets import (
 )
 
 
-dev_msg = {
-    'ADEV': 'Calculating Allan deviation',
-    'ADEV ovlp': 'Calculating Allan overlapping deviation',
-    'HDEV': 'Calculating Hadamard deviation'
-}
-
-
 def dialogWarning(msg):
     msgBox = QMessageBox()
     msgBox.setText(msg)
